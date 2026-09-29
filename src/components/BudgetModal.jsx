@@ -5,15 +5,17 @@ function BudgetModal({ onClose, onSave, budget, selectedMonth }) {
 
   const [amount, setAmount] = useState(budget?.amount || "");
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
-    onSave({
+    const success = await onSave({
       month,
       amount: Number(amount),
     });
 
-    onClose();
+    if (success) {
+      onClose();
+    }
   }
 
   return (
