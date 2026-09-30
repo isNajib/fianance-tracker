@@ -1,4 +1,9 @@
 import { useState } from "react";
+import { useAuth } from "./hooks/useAuth";
+import { useFinance } from "./hooks/useFinance";
+import { useFinanceSummary } from "./hooks/useFinanceSummary";
+import { exportExpensesToCsv } from "./utils/exportCsv";
+
 import Header from "./components/Header";
 import ActionButtons from "./components/ActionButtons";
 import SummaryCard from "./components/SummaryCard";
@@ -9,21 +14,29 @@ import HighestExpenseCard from "./components/HighestExpenseCard";
 import ExpenseChart from "./components/ExpenseChart";
 import MonthSelector from "./components/MonthSelector";
 import AuthForm from "./components/AuthForm";
-import { useAuth } from "./hooks/useAuth";
-import { useFinance } from "./hooks/useFinance";
-import { useFinanceSummary } from "./hooks/useFinanceSummary";
-import { exportExpensesToCsv } from "./utils/exportCsv";
+import IncomeModal from "./components/IncomeModal";
+import CategoryExpenseChart from "./components/CategoryExpenseChart";
 
 function App() {
   const { session, user, authLoading, Logout } = useAuth();
   const {
     budgets,
     expenses,
+    incomes,
+
     editingExpense,
     setEditingExpense,
+
+    editingIncome,
+    setEditingIncome,
+
     saveBudget,
     saveExpense,
+    saveIncome,
+
     removeExpense,
+    removeIncome,
+
     isSaving,
   } = useFinance(user);
 
@@ -40,17 +53,23 @@ function App() {
   const {
     currentBudget,
     filteredExpenses,
+    filteredIncomes,
     totalExpense,
     budgetAmount,
     remainingBudget,
     budgetUsage,
+    monthlyIncome,
+    monthlySaving,
+    totalSaving,
     dailyTotals,
     highestExpenseDay,
-  } = useFinanceSummary(budgets, expenses, selectedMonth);
+    categoryChartData,
+  } = useFinanceSummary(budgets, expenses, incomes, selectedMonth);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [previousUserId, setPreviousUserId] = useState(user?.id);
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
 
   if (previousUserId !== user?.id) {
     setPreviousUserId(user?.id);
@@ -85,6 +104,11 @@ function App() {
     startIndex + itemsPerPage,
   );
 
+  function handleEditIncome(income) {
+    setEditingIncome(income);
+    setShowIncomeModal(true);
+  }
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -116,9 +140,89 @@ function App() {
         {/* ACTION BUTTON */}
         <div className="mb-4">
           <ActionButtons
+            onAddIncome={() => setShowIncomeModal(true)}
             onAddBudget={() => setShowBudgetModal(true)}
             onAddExpense={() => setShowExpenseModal(true)}
           />
+        </div>
+
+        {/* INCOME CARD */}
+        <div className="mb-4 rounded-3xl border border-white/70 bg-white/70 p-4 shadow-lg backdrop-blur-xl">
+          <div className="mb-3 flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                Income Bulan Ini
+              </p>
+
+              <p className="mt-1 text-xl font-bold text-slate-800">
+                Rp{monthlyIncome.toLocaleString("id-ID")}
+              </p>
+            </div>
+
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600">
+              {filteredIncomes.length} income
+            </span>
+          </div>
+
+          {filteredIncomes.length > 0 ? (
+            <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
+              {filteredIncomes.map((income) => (
+                <div
+                  key={income.id}
+                  className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-700">
+                      {income.description}
+                    </p>
+
+                    <p className="text-xs text-slate-400">{income.date}</p>
+                  </div>
+
+                  <div className="ml-3 shrink-0 text-right">
+                    <p className="text-sm font-semibold text-slate-800">
+                      Rp{Number(income.amount).toLocaleString("id-ID")}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => handleEditIncome(income)}
+                      className="mt-0.5 text-xs font-medium text-blue-500 transition hover:text-blue-700"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-slate-50 px-3 py-4 text-center">
+              <p className="text-sm text-slate-400">
+                Belum ada income bulan ini.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* SAVING + TOTAL TABUNGAN */}
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl border border-white/70 bg-orange-50/80 p-4 shadow-sm">
+            <p className="text-xs font-medium text-slate-500">
+              Saving Bulan Ini
+            </p>
+
+            <p className="mt-1 text-base font-bold text-slate-800">
+              Rp{monthlySaving.toLocaleString("id-ID")}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/70 bg-violet-50/80 p-4 shadow-sm">
+            <p className="text-xs font-medium text-slate-500">Total Tabungan</p>
+
+            <p className="mt-1 text-base font-bold text-slate-800">
+              Rp{totalSaving.toLocaleString("id-ID")}
+            </p>
+          </div>
         </div>
 
         {/* SUMMARY */}
@@ -160,6 +264,11 @@ function App() {
 
         {/* CHART */}
         <ExpenseChart dailyTotals={dailyTotals} />
+
+        <CategoryExpenseChart
+          data={categoryChartData}
+          totalExpense={totalExpense}
+        />
 
         {/* EXPENSE TABLE */}
         <ExpenseTable
@@ -234,6 +343,18 @@ function App() {
             }}
             onSave={saveExpense}
             expense={editingExpense}
+            isSaving={isSaving}
+          />
+        )}
+
+        {showIncomeModal && (
+          <IncomeModal
+            onClose={() => {
+              setShowIncomeModal(false);
+              setEditingIncome(null);
+            }}
+            onSave={saveIncome}
+            income={editingIncome}
             isSaving={isSaving}
           />
         )}

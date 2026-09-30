@@ -32,15 +32,19 @@ function ExpenseTable({ expenses, onEdit, onDelete }) {
                 </th>
 
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Kategori
+                </th>
+
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Nominal
+                </th>
+
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
                   Keterangan
                 </th>
 
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
                   Metode
-                </th>
-
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Nominal
                 </th>
 
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -61,6 +65,16 @@ function ExpenseTable({ expenses, onEdit, onDelete }) {
 
                   <td className="px-4 py-4">
                     <p className="font-medium text-slate-800">
+                      {expense.category}
+                    </p>
+                  </td>
+
+                  <td className="px-4 py-4 font-semibold text-slate-800">
+                    Rp{expense.amount.toLocaleString("id-ID")}
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <p className="font-medium text-slate-800">
                       {expense.description}
                     </p>
                   </td>
@@ -69,10 +83,6 @@ function ExpenseTable({ expenses, onEdit, onDelete }) {
                     <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">
                       {expense.paymentMethod}
                     </span>
-                  </td>
-
-                  <td className="px-4 py-4 font-semibold text-slate-800">
-                    Rp{expense.amount.toLocaleString("id-ID")}
                   </td>
 
                   <td className="px-4 py-4">

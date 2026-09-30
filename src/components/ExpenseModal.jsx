@@ -7,19 +7,25 @@ function ExpenseModal({ onClose, onSave, expense, isSaving }) {
   const [paymentMethod, setPaymentMethod] = useState(
     expense?.paymentMethod ?? "Cash",
   );
+  const [category, setCategory] = useState(
+    expense?.category ?? "Makan & Minum",
+  );
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
-    onSave({
-      id: expense ? expense.id : Date.now(),
+    const success = await onSave({
+      id: expense ? expense.id : undefined,
       date,
       description,
       amount: Number(amount),
       paymentMethod,
+      category,
     });
 
-    onClose();
+    if (success) {
+      onClose();
+    }
   }
 
   return (
@@ -48,6 +54,27 @@ function ExpenseModal({ onClose, onSave, expense, isSaving }) {
               required
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-600">
+              Kategori
+            </label>
+
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+            >
+              <option>Makan & Minum</option>
+              <option>Transportasi</option>
+              <option>Belanja</option>
+              <option>Tagihan</option>
+              <option>Hiburan</option>
+              <option>Kesehatan</option>
+              <option>Pendidikan</option>
+              <option>Lainnya</option>
+            </select>
           </div>
 
           <div>

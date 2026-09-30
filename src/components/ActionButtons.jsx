@@ -1,48 +1,33 @@
 import { WalletCards, PlusCircle } from "lucide-react";
 
-function ActionButtons({ onAddBudget, onAddExpense }) {
+function ActionButtons({ onAddIncome, onAddBudget, onAddExpense }) {
   return (
-    <div className="grid grid-cols-2 gap-2.5">
+    <div className="grid grid-cols-3 gap-2">
+      <button
+        onClick={onAddIncome}
+        className="rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-400 px-3 py-4 text-sm font-medium text-white shadow-md transition hover:brightness-95"
+      >
+        Tambah
+        <br />
+        Income
+      </button>
+
       <button
         onClick={onAddBudget}
-        className="
-          flex items-center justify-center gap-1.5
-          rounded-xl
-          bg-gradient-to-r
-          from-blue-400
-          to-cyan-400
-          px-2.5 py-2.5
-          text-[11px]
-          font-semibold
-          text-white
-          shadow-sm
-          transition
-          hover:-translate-y-0.5
-        "
+        className="rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-400 px-3 py-4 text-sm font-medium text-white shadow-md transition hover:brightness-95"
       >
-        <WalletCards size={14} />
-        Tambah Budget
+        Tambah
+        <br />
+        Budget
       </button>
 
       <button
         onClick={onAddExpense}
-        className="
-          flex items-center justify-center gap-1.5
-          rounded-xl
-          bg-gradient-to-r
-          from-fuchsia-400
-          to-violet-400
-          px-2.5 py-2.5
-          text-[11px]
-          font-semibold
-          text-white
-          shadow-sm
-          transition
-          hover:-translate-y-0.5
-        "
+        className="rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-500 px-3 py-4 text-sm font-medium text-white shadow-md transition hover:brightness-95"
       >
-        <PlusCircle size={14} />
-        Tambah Pengeluaran
+        Tambah
+        <br />
+        Pengeluaran
       </button>
     </div>
   );

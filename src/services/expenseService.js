@@ -15,6 +15,7 @@ export async function getExpenses(userId) {
     description: expense.description,
     amount: Number(expense.amount),
     paymentMethod: expense.payment_method,
+    category: expense.category,
   }));
 }
 
@@ -25,6 +26,7 @@ export async function createExpense(userId, expense) {
     description: expense.description,
     amount: expense.amount,
     payment_method: expense.paymentMethod,
+    category: expense.category,
   });
 
   if (error) throw error;
@@ -38,6 +40,7 @@ export async function updateExpense(userId, id, expense) {
       description: expense.description,
       amount: expense.amount,
       payment_method: expense.paymentMethod,
+      category: expense.category,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

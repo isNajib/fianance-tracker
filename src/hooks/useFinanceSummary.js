@@ -5,7 +5,7 @@ import {
   findHighestExpenseDay,
 } from "../utils/finance";
 
-export function useFinanceSummary(budgets, expenses, selectedMonth) {
+export function useFinanceSummary(budgets, expenses, incomes, selectedMonth) {
   const currentBudget = budgets.find(
     (budget) => budget.month === selectedMonth,
   );
@@ -13,6 +13,25 @@ export function useFinanceSummary(budgets, expenses, selectedMonth) {
   const filteredExpenses = filterExpensesByMonth(expenses, selectedMonth);
 
   const totalExpense = calculateTotalExpense(filteredExpenses);
+
+  const categoryTotals = filteredExpenses.reduce((acc, expense) => {
+    const category = expense.category || "Lainnya";
+
+    if (!acc[category]) {
+      acc[category] = 0;
+    }
+
+    acc[category] += Number(expense.amount);
+
+    return acc;
+  }, {});
+
+  const categoryChartData = Object.entries(categoryTotals)
+    .map(([category, amount]) => ({
+      category,
+      amount,
+    }))
+    .sort((a, b) => b.amount - a.amount);
 
   const budgetAmount = currentBudget ? Number(currentBudget.amount) : 0;
 
@@ -25,14 +44,46 @@ export function useFinanceSummary(budgets, expenses, selectedMonth) {
 
   const highestExpenseDay = findHighestExpenseDay(dailyTotals);
 
+  const filteredIncomes = incomes.filter((income) =>
+    income.date.startsWith(selectedMonth),
+  );
+
+  const monthlyIncome = filteredIncomes.reduce(
+    (total, income) => total + Number(income.amount),
+    0,
+  );
+
+  const monthlySaving = monthlyIncome - budgetAmount;
+
+  const totalIncome = incomes.reduce(
+    (total, income) => total + Number(income.amount),
+    0,
+  );
+
+  const totalBudget = budgets.reduce(
+    (total, budget) => total + Number(budget.amount),
+    0,
+  );
+
+  const totalSaving = totalIncome - totalBudget;
+
   return {
     currentBudget,
     filteredExpenses,
+    filteredIncomes,
+
     totalExpense,
     budgetAmount,
     remainingBudget,
     budgetUsage,
+
+    monthlyIncome,
+    monthlySaving,
+    totalSaving,
+
     dailyTotals,
     highestExpenseDay,
+
+    categoryChartData,
   };
 }

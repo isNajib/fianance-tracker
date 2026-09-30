@@ -13,15 +13,28 @@ import {
   deleteExpense,
 } from "../services/expenseService";
 
+import {
+  getIncomes,
+  createIncome,
+  updateIncome,
+  deleteIncome,
+} from "../services/incomeService";
+
 export function useFinance(user) {
   const userId = user?.id;
   const [budgetState, setBudgetState] = useState({ userId: null, data: [] });
   const [expenseState, setExpenseState] = useState({ userId: null, data: [] });
+  const [incomeState, setIncomeState] = useState({
+    userId: null,
+    data: [],
+  });
   const [editingExpense, setEditingExpense] = useState(null);
+  const [editingIncome, setEditingIncome] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const budgets = budgetState.userId === userId ? budgetState.data : [];
   const expenses = expenseState.userId === userId ? expenseState.data : [];
+  const incomes = incomeState.userId === userId ? incomeState.data : [];
 
   async function fetchBudgets() {
     if (!userId) return;
@@ -45,6 +58,21 @@ export function useFinance(user) {
     }
   }
 
+  async function fetchIncomes() {
+    if (!userId) return;
+
+    try {
+      const data = await getIncomes(userId);
+
+      setIncomeState({
+        userId,
+        data,
+      });
+    } catch (error) {
+      console.error("Gagal mengambil income:", error);
+    }
+  }
+
   useEffect(() => {
     if (!userId) return;
 
@@ -53,7 +81,13 @@ export function useFinance(user) {
     async function loadBudgets() {
       try {
         const data = await getBudgets(userId);
-        if (!cancelled) setBudgetState({ userId, data });
+
+        if (!cancelled) {
+          setBudgetState({
+            userId,
+            data,
+          });
+        }
       } catch (error) {
         console.error("Gagal mengambil budget:", error);
       }
@@ -62,14 +96,36 @@ export function useFinance(user) {
     async function loadExpenses() {
       try {
         const data = await getExpenses(userId);
-        if (!cancelled) setExpenseState({ userId, data });
+
+        if (!cancelled) {
+          setExpenseState({
+            userId,
+            data,
+          });
+        }
       } catch (error) {
         console.error("Gagal mengambil pengeluaran:", error);
       }
     }
 
+    async function loadIncomes() {
+      try {
+        const data = await getIncomes(userId);
+
+        if (!cancelled) {
+          setIncomeState({
+            userId,
+            data,
+          });
+        }
+      } catch (error) {
+        console.error("Gagal mengambil income:", error);
+      }
+    }
+
     loadBudgets();
     loadExpenses();
+    loadIncomes();
 
     return () => {
       cancelled = true;
@@ -148,16 +204,67 @@ export function useFinance(user) {
     }
   }
 
+  async function saveIncome(data) {
+    if (!user) return false;
+
+    setIsSaving(true);
+
+    try {
+      if (editingIncome) {
+        await updateIncome(user.id, editingIncome.id, data);
+
+        setEditingIncome(null);
+      } else {
+        await createIncome(user.id, data);
+      }
+
+      await fetchIncomes();
+
+      return true;
+    } catch (error) {
+      console.error("Gagal menyimpan income:", error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function removeIncome(id) {
+    if (!user) return false;
+
+    const confirmDelete = window.confirm("Yakin ingin menghapus income ini?");
+
+    if (!confirmDelete) return false;
+
+    try {
+      await deleteIncome(user.id, id);
+      await fetchIncomes();
+
+      return true;
+    } catch (error) {
+      console.error("Gagal menghapus income:", error);
+      return false;
+    }
+  }
+
   return {
     budgets,
     expenses,
+    incomes,
 
     editingExpense,
     setEditingExpense,
 
+    editingIncome,
+    setEditingIncome,
+
     saveBudget,
     saveExpense,
+    saveIncome,
+
     removeExpense,
+    removeIncome,
+
     isSaving,
   };
 }
