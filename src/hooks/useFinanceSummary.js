@@ -25,8 +25,6 @@ export function useFinanceSummary(budgets, expenses, selectedMonth) {
 
   const highestExpenseDay = findHighestExpenseDay(dailyTotals);
 
-  const latestExpenses = filteredExpenses.slice(-4).reverse();
-
   return {
     currentBudget,
     filteredExpenses,
@@ -36,6 +34,5 @@ export function useFinanceSummary(budgets, expenses, selectedMonth) {
     budgetUsage,
     dailyTotals,
     highestExpenseDay,
-    latestExpenses,
   };
 }

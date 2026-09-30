@@ -14,46 +14,70 @@ import {
 } from "../services/expenseService";
 
 export function useFinance(user) {
-  const [budgets, setBudgets] = useState([]);
-  const [expenses, setExpenses] = useState([]);
+  const userId = user?.id;
+  const [budgetState, setBudgetState] = useState({ userId: null, data: [] });
+  const [expenseState, setExpenseState] = useState({ userId: null, data: [] });
   const [editingExpense, setEditingExpense] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const budgets = budgetState.userId === userId ? budgetState.data : [];
+  const expenses = expenseState.userId === userId ? expenseState.data : [];
+
   async function fetchBudgets() {
-    if (!user) return;
+    if (!userId) return;
 
     try {
-      const data = await getBudgets(user.id);
-      setBudgets(data);
+      const data = await getBudgets(userId);
+      setBudgetState({ userId, data });
     } catch (error) {
       console.error("Gagal mengambil budget:", error);
     }
   }
 
   async function fetchExpenses() {
-    if (!user) return;
+    if (!userId) return;
 
     try {
-      const data = await getExpenses(user.id);
-      setExpenses(data);
+      const data = await getExpenses(userId);
+      setExpenseState({ userId, data });
     } catch (error) {
       console.error("Gagal mengambil pengeluaran:", error);
     }
   }
 
   useEffect(() => {
-    if (!user) {
-      setBudgets([]);
-      setExpenses([]);
-      return;
+    if (!userId) return;
+
+    let cancelled = false;
+
+    async function loadBudgets() {
+      try {
+        const data = await getBudgets(userId);
+        if (!cancelled) setBudgetState({ userId, data });
+      } catch (error) {
+        console.error("Gagal mengambil budget:", error);
+      }
     }
 
-    fetchBudgets();
-    fetchExpenses();
-  }, [user]);
+    async function loadExpenses() {
+      try {
+        const data = await getExpenses(userId);
+        if (!cancelled) setExpenseState({ userId, data });
+      } catch (error) {
+        console.error("Gagal mengambil pengeluaran:", error);
+      }
+    }
+
+    loadBudgets();
+    loadExpenses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   async function saveBudget(data) {
-    if (!user) return false;
+    if (!userId) return false;
 
     setIsSaving(true);
 
@@ -63,9 +87,9 @@ export function useFinance(user) {
 
     try {
       if (existingBudget) {
-        await updateBudget(user.id, existingBudget.id, data);
+        await updateBudget(userId, existingBudget.id, data);
       } else {
-        await createBudget(user.id, data);
+        await createBudget(userId, data);
       }
 
       await fetchBudgets();
@@ -80,17 +104,17 @@ export function useFinance(user) {
   }
 
   async function saveExpense(data) {
-    if (!user) return false;
+    if (!userId) return false;
 
     setIsSaving(true);
 
     try {
       if (editingExpense) {
-        await updateExpense(user.id, editingExpense.id, data);
+        await updateExpense(userId, editingExpense.id, data);
 
         setEditingExpense(null);
       } else {
-        await createExpense(user.id, data);
+        await createExpense(userId, data);
       }
 
       await fetchExpenses();
@@ -105,7 +129,7 @@ export function useFinance(user) {
   }
 
   async function removeExpense(id) {
-    if (!user) return false;
+    if (!userId) return false;
 
     const confirmDelete = window.confirm(
       "Yakin ingin menghapus pengeluaran ini?",
@@ -114,7 +138,7 @@ export function useFinance(user) {
     if (!confirmDelete) return false;
 
     try {
-      await deleteExpense(user.id, id);
+      await deleteExpense(userId, id);
       await fetchExpenses();
 
       return true;

@@ -1,19 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 function ExpenseModal({ onClose, onSave, expense, isSaving }) {
-  const [date, setDate] = useState("");
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("Cash");
-
-  useEffect(() => {
-    if (expense) {
-      setDate(expense.date);
-      setDescription(expense.description);
-      setAmount(expense.amount);
-      setPaymentMethod(expense.paymentMethod);
-    }
-  }, [expense]);
+  const [date, setDate] = useState(expense?.date ?? "");
+  const [description, setDescription] = useState(expense?.description ?? "");
+  const [amount, setAmount] = useState(expense?.amount ?? "");
+  const [paymentMethod, setPaymentMethod] = useState(
+    expense?.paymentMethod ?? "Cash",
+  );
 
   function handleSubmit(e) {
     e.preventDefault();

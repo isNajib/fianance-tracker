@@ -36,7 +36,6 @@ function App() {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
-  const [showAllExpenses, setShowAllExpenses] = useState(false);
 
   const {
     currentBudget,
@@ -47,8 +46,16 @@ function App() {
     budgetUsage,
     dailyTotals,
     highestExpenseDay,
-    latestExpenses,
   } = useFinanceSummary(budgets, expenses, selectedMonth);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const [previousUserId, setPreviousUserId] = useState(user?.id);
+
+  if (previousUserId !== user?.id) {
+    setPreviousUserId(user?.id);
+    setCurrentPage(1);
+  }
 
   function handleEditExpense(expense) {
     setEditingExpense(expense);
@@ -64,6 +71,19 @@ function App() {
       remainingBudget,
     );
   }
+
+  const sortedExpenses = [...filteredExpenses].reverse();
+
+  const totalPages = Math.ceil(sortedExpenses.length / itemsPerPage);
+
+  const safeCurrentPage = Math.min(currentPage, Math.max(totalPages, 1));
+
+  const startIndex = (safeCurrentPage - 1) * itemsPerPage;
+
+  const paginatedExpenses = sortedExpenses.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   if (authLoading) {
     return (
@@ -88,7 +108,7 @@ function App() {
             selectedMonth={selectedMonth}
             onChange={(month) => {
               setSelectedMonth(month);
-              setShowAllExpenses(false);
+              setCurrentPage(1);
             }}
           />
         </div>
@@ -143,22 +163,35 @@ function App() {
 
         {/* EXPENSE TABLE */}
         <ExpenseTable
-          expenses={
-            showAllExpenses ? [...filteredExpenses].reverse() : latestExpenses
-          }
+          expenses={paginatedExpenses}
           onEdit={handleEditExpense}
           onDelete={removeExpense}
         />
 
-        {filteredExpenses.length > 4 && (
-          <button
-            onClick={() => setShowAllExpenses(!showAllExpenses)}
-            className="mt-3 w-full text-center text-sm font-medium text-slate-500 transition hover:text-slate-800"
-          >
-            {showAllExpenses
-              ? "Tampilkan lebih sedikit"
-              : "Lihat semua transaksi"}
-          </button>
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-between">
+            <button
+              onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+              disabled={safeCurrentPage === 1}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Sebelumnya
+            </button>
+
+            <span className="text-sm text-slate-500">
+              {safeCurrentPage} / {totalPages}
+            </span>
+
+            <button
+              onClick={() =>
+                setCurrentPage((page) => Math.min(page + 1, totalPages))
+              }
+              disabled={safeCurrentPage === totalPages}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Berikutnya
+            </button>
+          </div>
         )}
 
         <button
