@@ -1,5 +1,4 @@
-import { supabase } from "./lib/supabase";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Header from "./components/Header";
 import ActionButtons from "./components/ActionButtons";
 import SummaryCard from "./components/SummaryCard";
@@ -10,193 +9,60 @@ import HighestExpenseCard from "./components/HighestExpenseCard";
 import ExpenseChart from "./components/ExpenseChart";
 import MonthSelector from "./components/MonthSelector";
 import AuthForm from "./components/AuthForm";
-import {
-  getBudgets,
-  createBudget,
-  updateBudget,
-} from "./services/budgetService";
-
-import {
-  getExpenses,
-  createExpense,
-  updateExpense,
-  deleteExpense,
-} from "./services/expenseService";
-
-import {
-  filterExpensesByMonth,
-  calculateTotalExpense,
-  calculateDailyTotals,
-  findHighestExpenseDay,
-} from "./utils/finance";
+import { useAuth } from "./hooks/useAuth";
+import { useFinance } from "./hooks/useFinance";
+import { useFinanceSummary } from "./hooks/useFinanceSummary";
+import { exportExpensesToCsv } from "./utils/exportCsv";
 
 function App() {
-  const [session, setSession] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState("2026-09");
+  const { session, user, authLoading, Logout } = useAuth();
+  const {
+    budgets,
+    expenses,
+    editingExpense,
+    setEditingExpense,
+    saveBudget,
+    saveExpense,
+    removeExpense,
+    isSaving,
+  } = useFinance(user);
+
+  const now = new Date();
+
+  const currentMonth = `${now.getFullYear()}-${String(
+    now.getMonth() + 1,
+  ).padStart(2, "0")}`;
+
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
-  const [budgets, setBudgets] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [editingExpense, setEditingExpense] = useState(null);
+  const [showAllExpenses, setShowAllExpenses] = useState(false);
 
-  useEffect(() => {
-    fetchBudgets();
-    fetchExpenses();
-  }, []);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setAuthLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  async function fetchBudgets() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    try {
-      const data = await getBudgets(user.id);
-
-      setBudgets(data);
-    } catch (error) {
-      console.error("Gagal mengambil budget:", error);
-    }
-  }
-
-  async function handleSaveBudget(data) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return false;
-
-    const existingBudget = budgets.find(
-      (budget) => budget.month === data.month,
-    );
-
-    try {
-      if (existingBudget) {
-        await updateBudget(user.id, existingBudget.id, data);
-      } else {
-        await createBudget(user.id, data);
-      }
-
-      await fetchBudgets();
-
-      return true;
-    } catch (error) {
-      console.error("Gagal menyimpan budget:", error);
-
-      return false;
-    }
-  }
-
-  async function fetchExpenses() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    try {
-      const data = await getExpenses(user.id);
-      setExpenses(data);
-    } catch (error) {
-      console.error("Gagal mengambil pengeluaran:", error);
-    }
-  }
-
-  async function handleSaveExpense(data) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return false;
-
-    try {
-      if (editingExpense) {
-        await updateExpense(user.id, editingExpense.id, data);
-
-        setEditingExpense(null);
-      } else {
-        await createExpense(user.id, data);
-      }
-
-      await fetchExpenses();
-
-      return true;
-    } catch (error) {
-      console.error("Gagal menyimpan pengeluaran:", error);
-
-      return false;
-    }
-  }
-
-  async function handleDeleteExpense(id) {
-    const confirmDelete = window.confirm(
-      "Yakin ingin menghapus pengeluaran ini?",
-    );
-
-    if (!confirmDelete) return;
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    try {
-      await deleteExpense(user.id, id);
-
-      await fetchExpenses();
-    } catch (error) {
-      console.error("Gagal menghapus pengeluaran:", error);
-    }
-  }
+  const {
+    currentBudget,
+    filteredExpenses,
+    totalExpense,
+    budgetAmount,
+    remainingBudget,
+    budgetUsage,
+    dailyTotals,
+    highestExpenseDay,
+    latestExpenses,
+  } = useFinanceSummary(budgets, expenses, selectedMonth);
 
   function handleEditExpense(expense) {
     setEditingExpense(expense);
     setShowExpenseModal(true);
   }
 
-  const currentBudget = budgets.find(
-    (budget) => budget.month === selectedMonth,
-  );
-
-  const filteredExpenses = filterExpensesByMonth(expenses, selectedMonth);
-
-  const totalExpense = calculateTotalExpense(filteredExpenses);
-
-  const budgetAmount = currentBudget ? Number(currentBudget.amount) : 0;
-
-  const remainingBudget = budgetAmount - totalExpense;
-
-  const budgetUsage =
-    budgetAmount > 0 ? Math.min((totalExpense / budgetAmount) * 100, 100) : 0;
-
-  const dailyTotals = calculateDailyTotals(filteredExpenses);
-
-  const highestExpenseDay = findHighestExpenseDay(dailyTotals);
-
-  const latestExpenses = filteredExpenses.slice(-4).reverse();
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
+  function handleExportCsv() {
+    exportExpensesToCsv(
+      filteredExpenses,
+      selectedMonth,
+      budgetAmount,
+      totalExpense,
+      remainingBudget,
+    );
   }
 
   if (authLoading) {
@@ -218,16 +84,12 @@ function App() {
         <div className="mb-4 flex items-start justify-between gap-3">
           <Header />
 
-          <button
-            onClick={handleLogout}
-            className="text-xs font-semibold text-rose-500"
-          >
-            Logout
-          </button>
-
           <MonthSelector
             selectedMonth={selectedMonth}
-            onChange={setSelectedMonth}
+            onChange={(month) => {
+              setSelectedMonth(month);
+              setShowAllExpenses(false);
+            }}
           />
         </div>
 
@@ -281,10 +143,44 @@ function App() {
 
         {/* EXPENSE TABLE */}
         <ExpenseTable
-          expenses={latestExpenses}
+          expenses={
+            showAllExpenses ? [...filteredExpenses].reverse() : latestExpenses
+          }
           onEdit={handleEditExpense}
-          onDelete={handleDeleteExpense}
+          onDelete={removeExpense}
         />
+
+        {filteredExpenses.length > 4 && (
+          <button
+            onClick={() => setShowAllExpenses(!showAllExpenses)}
+            className="mt-3 w-full text-center text-sm font-medium text-slate-500 transition hover:text-slate-800"
+          >
+            {showAllExpenses
+              ? "Tampilkan lebih sedikit"
+              : "Lihat semua transaksi"}
+          </button>
+        )}
+
+        <button
+          onClick={handleExportCsv}
+          disabled={filteredExpenses.length === 0}
+          className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Export CSV
+        </button>
+
+        <div className="mt-6 border-t border-gray-200 pt-4 pb-6">
+          <p className="mb-3 text-center text-xs text-gray-400">
+            {user?.email}
+          </p>
+
+          <button
+            onClick={Logout}
+            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+          >
+            Logout
+          </button>
+        </div>
 
         {/* MODALS */}
         {showBudgetModal && (
@@ -292,7 +188,8 @@ function App() {
             budget={currentBudget}
             selectedMonth={selectedMonth}
             onClose={() => setShowBudgetModal(false)}
-            onSave={handleSaveBudget}
+            onSave={saveBudget}
+            isSaving={isSaving}
           />
         )}
 
@@ -302,8 +199,9 @@ function App() {
               setShowExpenseModal(false);
               setEditingExpense(null);
             }}
-            onSave={handleSaveExpense}
+            onSave={saveExpense}
             expense={editingExpense}
+            isSaving={isSaving}
           />
         )}
       </div>

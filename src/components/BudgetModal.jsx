@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function BudgetModal({ onClose, onSave, budget, selectedMonth }) {
+function BudgetModal({ onClose, onSave, budget, selectedMonth, isSaving }) {
   const [month, setMonth] = useState(budget?.month || selectedMonth);
 
   const [amount, setAmount] = useState(budget?.amount || "");
@@ -72,9 +72,10 @@ function BudgetModal({ onClose, onSave, budget, selectedMonth }) {
 
             <button
               type="submit"
-              className="rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-200/50 transition hover:-translate-y-0.5"
+              disabled={isSaving}
+              className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {budget ? "Update" : "Simpan"}
+              {isSaving ? "Menyimpan..." : "Simpan"}
             </button>
           </div>
         </form>

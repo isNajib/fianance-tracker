@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-function ExpenseModal({ onClose, onSave, expense }) {
+function ExpenseModal({ onClose, onSave, expense, isSaving }) {
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -118,9 +118,10 @@ function ExpenseModal({ onClose, onSave, expense }) {
 
             <button
               type="submit"
-              className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fuchsia-200/50 transition hover:-translate-y-0.5"
+              disabled={isSaving}
+              className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {expense ? "Update" : "Simpan"}
+              {isSaving ? "Menyimpan..." : "Simpan"}
             </button>
           </div>
         </form>
