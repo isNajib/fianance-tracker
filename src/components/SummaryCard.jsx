@@ -1,6 +1,6 @@
 import { Pencil } from "lucide-react";
 
-function SummaryCard({ title, amount, onEdit }) {
+function SummaryCard({ title, subtitle, amount, onEdit }) {
   return (
     <div className="border-r border-slate-200/60 px-3 py-4 last:border-r-0">
       <div className="flex items-center justify-between gap-2">
@@ -26,6 +26,10 @@ function SummaryCard({ title, amount, onEdit }) {
           </button>
         )}
       </div>
+
+      {subtitle && (
+        <p className="mt-0.5 text-[10px] text-slate-400">{subtitle}</p>
+      )}
 
       <h2 className="mt-2 whitespace-nowrap text-sm font-bold text-slate-800">
         {amount}

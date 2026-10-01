@@ -137,23 +137,36 @@ export function useFinance(user) {
 
     setIsSaving(true);
 
-    const existingBudget = budgets.find(
-      (budget) => budget.month === data.month,
-    );
-
     try {
+      const existingBudget = data.id
+        ? budgets.find((budget) => budget.id === data.id)
+        : data.periodType === "monthly"
+          ? budgets.find(
+              (budget) =>
+                budget.period_type === "monthly" && budget.month === data.month,
+            )
+          : null;
+
       if (existingBudget) {
         await updateBudget(userId, existingBudget.id, data);
       } else {
         await createBudget(userId, data);
       }
 
-      await fetchBudgets();
+      const updatedBudgets = await getBudgets(userId);
 
-      return true;
+      setBudgetState({
+        userId,
+        data: updatedBudgets,
+      });
+
+      return { success: true };
     } catch (error) {
       console.error("Gagal menyimpan budget:", error);
-      return false;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
     } finally {
       setIsSaving(false);
     }

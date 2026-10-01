@@ -104,6 +104,29 @@ function App() {
     startIndex + itemsPerPage,
   );
 
+  const budgetTitle =
+    currentBudget?.period_type === "custom"
+      ? "Budget Periode"
+      : "Budget Bulanan";
+
+  const budgetSubtitle =
+    currentBudget?.period_type === "custom"
+      ? `${formatPeriodDate(currentBudget.start_date)} - ${formatPeriodDate(
+          currentBudget.end_date,
+        )}`
+      : null;
+
+  function formatPeriodDate(dateString) {
+    if (!dateString) return "";
+
+    const date = new Date(dateString);
+
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+    });
+  }
+
   function handleEditIncome(income) {
     setEditingIncome(income);
     setShowIncomeModal(true);
@@ -229,7 +252,8 @@ function App() {
         <div className="mb-4 overflow-hidden rounded-3xl border border-white/70 bg-white/70 shadow-lg backdrop-blur-xl">
           <div className="grid grid-cols-3">
             <SummaryCard
-              title="Budget Bulanan"
+              title={budgetTitle}
+              subtitle={budgetSubtitle}
               amount={`Rp${budgetAmount.toLocaleString("id-ID")}`}
               onEdit={() => setShowBudgetModal(true)}
             />

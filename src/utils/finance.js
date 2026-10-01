@@ -27,3 +27,9 @@ export function findHighestExpenseDay(dailyTotals) {
     return highest;
   }, null);
 }
+
+export function filterExpensesByDateRange(expenses, startDate, endDate) {
+  return expenses.filter(
+    (expense) => expense.date >= startDate && expense.date <= endDate,
+  );
+}
